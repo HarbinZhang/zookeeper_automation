@@ -21,7 +21,7 @@ APP_SPEC = os.environ.get("APP_SPEC", "")
 BOTO_REGION = os.environ.get("BOTO_REGION", "")
 
 if BOTO_REGION == "":
-    BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-west-1")
+    BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
 
 ENI_TAG_KEY = "exhibitor-eni-pool"
 ENI_TAG_VALUE = "{}-exhibitor-{}-eni-pool".format(ENV, APP_SPEC).replace("exhibitor--eni", "exhibitor-eni")
@@ -79,6 +79,8 @@ def main():
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
     internal_subnets = get_internal_subnets(ec2, current_az)
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         format="[%(asctime)s %(levelname)s] %(message)s",
