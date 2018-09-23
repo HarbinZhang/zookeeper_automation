@@ -16,12 +16,12 @@ from botocore.exceptions import ClientError
 
 DEV_MODE = True if os.environ.get("DEV_MODE", "") else False
 
-ENV = os.environ["ENV"]
-APP_SPEC = os.environ["APP_SPEC"]
-BOTO_REGION = os.environ["BOTO_REGION"]
+ENV = os.environ.get("ENV", "")
+APP_SPEC = os.environ.get("APP_SPEC", "")
+BOTO_REGION = os.environ.get("BOTO_REGION", "")
 
 if BOTO_REGION == "":
-    BOTO_REGION = os.environ["AWS_DEFAULT_REGION"]
+    BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-west-1")
 
 ENI_TAG_KEY = "exhibitor-eni-pool"
 ENI_TAG_VALUE = "{}-exhibitor-{}-eni-pool".format(ENV, APP_SPEC).replace("exhibitor--eni", "exhibitor-eni")
