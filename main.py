@@ -28,6 +28,20 @@ DEV_MODE = True if os.environ.get("DEV_MODE", "") else False
 
 
 
+def get_internal_subnets(ec2, current_az):
+    return ec2.describe_subnets(
+        Filters=[
+            {
+                "Name": "availability-zone",
+                "Values": [current_az]
+            },
+            {
+                "Name": "tag:Name",
+                "Values": ["internal-{}".format(current_az)]
+            }
+        ]
+    )["Subnets"]
+
 @functools.lru_cache(1)
 def get_metadata():
     if not DEV_MODE:
@@ -59,8 +73,12 @@ def main():
     print("hi")
     instance_id = get_metadata()["instanceId"]
     current_az = get_metadata()["availabilityZone"]
-    print(current_az)
+    logging.info("Current Instance ID %s", instance_id)
+    logging.info("Current AZ %s", current_az)
 
+    ec2 = boto3.client('ec2', region_name=BOTO_REGION)
+    ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
+    internal_subnets = get_internal_subnets(ec2, current_az)
 if __name__ == "__main__":
     logging.basicConfig(
         format="[%(asctime)s %(levelname)s] %(message)s",
