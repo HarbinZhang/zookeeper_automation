@@ -76,9 +76,21 @@ def main():
     logging.info("Current Instance ID %s", instance_id)
     logging.info("Current AZ %s", current_az)
 
+    logging.info(BOTO_REGION)
+
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
     internal_subnets = get_internal_subnets(ec2, current_az)
+
+    if not internal_subnets:
+        logging.error("No internal subnet found for availability zone %s",
+                      current_az)
+        sys.exit(1)
+
+    logging.info("Found internal subnets: %s", internal_subnets)
+    internal_subnet = internal_subnets[0]
+    logging.info("Using internal subnet: %s", internal_subnet)
+
 
 
 if __name__ == "__main__":
