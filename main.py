@@ -58,7 +58,8 @@ def get_metadata():
 def main():
     print("hi")
     instance_id = get_metadata()["instanceId"]
-    print(instance_id)
+    current_az = get_metadata()["availabilityZone"]
+    print(current_az)
 
 if __name__ == "__main__":
     logging.basicConfig(
