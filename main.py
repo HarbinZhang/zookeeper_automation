@@ -27,6 +27,115 @@ ENI_TAG_KEY = "exhibitor-eni-pool"
 ENI_TAG_VALUE = "{}-exhibitor-{}-eni-pool".format(ENV, APP_SPEC).replace("exhibitor--eni", "exhibitor-eni")
 
 
+class NetworkConfiguration(object):
+
+    @staticmethod
+    def get_default_gateway():
+        """Read the default gateway directly from /proc."""
+        with open("/proc/net/route") as fh:
+            for line in fh:
+                fields = line.strip().split()
+                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                    continue
+
+                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+        return ""
+
+    @staticmethod
+    def get_ip_address(ifname):
+        """
+        Get the local IP address of the given interface.
+
+        :param ifname name of the network interface
+        :return the IP address (if any)
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        return socket.inet_ntoa(fcntl.ioctl(
+            s.fileno(),
+            0x8915,  # SIOCGIFADDR
+            struct.pack('256s', ifname[:15].encode("utf-8"))
+        )[20:24])
+
+    @staticmethod
+    def configure_new_iface(iface, expected_ip=None):
+
+        retval = subprocess.call(["dhclient", iface], stderr=subprocess.STDOUT)
+        if retval != 0:
+            # do not exit here, known bug, IP should be configured:
+            # http://unix.stackexchange.com/questions/155990/docker-bridges-dhcp#155995
+            logging.error("Configuring iface %s seemed to have failed", iface)
+            return False
+        if expected_ip is not None:
+            iface_ip = NetworkConfiguration.get_ip_address(iface)
+            if iface_ip != expected_ip:
+                logging.error("Configuring %s did not yield the expected IP "
+                              "%s but another one %s", iface, expected_ip,
+                              iface_ip)
+                return False
+        return True
+
+    @staticmethod
+    def fix_same_net_routing(iface1, iface1_ip, iface2, iface2_ip,
+                             gateway, subnet_cidr):
+        """
+        Configure proper routing with 2 local interfaces
+        within the same IP subnet.
+
+        It's basically this:
+        http://serverfault.com/questions/336021/two-network-interfaces-and-two-ip-addresses-on-the-same-subnet-in-linux
+
+        with fixed routing to other subnets.
+        """
+
+        # arp_filter - BOOLEAN
+        #    1 - Allows you to have multiple network interfaces on the same
+        #    subnet, and have the ARPs for each interface be answered
+        #    based on whether or not the kernel would route a packet from
+        #    the ARP'd IP out that interface (therefore you must use source
+        #    based routing for this to work). In other words it allows control
+        #    of which cards (usually 1) will respond to an arp request.
+        try:
+            with open("/proc/sys/net/ipv4/conf/all/arp_filter", "w") as all_arp_filter:
+                all_arp_filter.write("1")
+
+            arp_filter_setting = """
+    net.ipv4.conf.all.arp_filter = 1
+    """
+            ensure_written(arp_filter_setting, "/etc/sysctl.conf")
+
+            # add additional routing tables
+            rt_table_iface1 = iface1
+            rt_table_iface2 = iface2
+            rt_tables = """
+1   {}
+2   {}
+""".format(rt_table_iface1, rt_table_iface2)
+            ensure_written(rt_tables, "/etc/iproute2/rt_tables")
+        except IOError as e:
+            logging.exception("Error fixing same-net-routing for two interfaces")
+            return False
+        commands = [
+            ["ip", "route", "add", "default", "via", gateway, "dev", iface1, "table", rt_table_iface1],
+            ["ip", "route", "add", "default", "via", gateway, "dev", iface2, "table", rt_table_iface2],
+            ["ip", "route", "add", subnet_cidr, "dev", iface1, "src", iface1_ip, "table", rt_table_iface1],
+            ["ip", "route", "add", subnet_cidr, "dev", iface2, "src", iface2_ip, "table", rt_table_iface2],
+            ["ip", "rule", "add", "from", iface1_ip, "table", rt_table_iface1],
+            ["ip", "rule", "add", "from", iface2_ip, "table", rt_table_iface2]
+        ]
+        for command in commands:
+            cmd_string = " ".join(command)
+            logging.info("Executing: " + cmd_string)
+            retval = subprocess.call(command, stderr=subprocess.STDOUT)
+            if retval == 2:
+                # route already exists, that's fine
+                pass
+            elif retval != 0:
+                logging.error("Command %s failed with return code %s. exiting.",
+                              cmd_string, retval)
+                return False
+        return True
+
+
 
 def get_internal_subnets(ec2, current_az):
     return ec2.describe_subnets(
@@ -208,6 +317,23 @@ def main():
     eni_to_configure = find_attached_eni_or_attach(
         ec2, ec2_res, instance_id, internal_subnet)
 
+    if eni_to_configure is None:
+        logging.error("Could not attach any ENI, exiting")
+        sys.exit(1)
+
+    eni_ip = eni_to_configure.private_ip_address
+    if not NetworkConfiguration.configure_new_iface("eth1", expected_ip=eni_ip):
+        logging.error("Error configuring new ENI, exiting")
+        sys.exit(1)
+
+    if not NetworkConfiguration.fix_same_net_routing(
+            "eth0", NetworkConfiguration.get_ip_address("eth0"),
+            "eth1", eni_ip,
+            NetworkConfiguration.get_default_gateway(),
+            internal_subnet["CidrBlock"]):
+        logging.error("Error while fixing same-net-routing. exiting.")
+        sys.exit(1)
+    pass
 
 
 if __name__ == "__main__":
