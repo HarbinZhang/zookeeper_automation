@@ -45,28 +45,10 @@ def get_internal_subnets(ec2, current_az):
 
 @functools.lru_cache(1)
 def get_metadata():
-    if not DEV_MODE:
-        conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
-        conn.request("GET", "/latest/dynamic/instance-identity/document")
-        r1 = conn.getresponse()
-        return json.loads(r1.read().decode("utf-8"))
-    else:
-        return {
-            "devpayProductCodes": None,
-            "privateIp": "10.0.0.1",
-            "availabilityZone": "eu-central-1b",
-            "version": "2010-08-31",
-            "region": "eu-central-1",
-            "instanceId": "i-xxxxxxxxxxx",
-            "billingProducts": None,
-            "instanceType": "t2.micro",
-            "pendingTime": "2017-03-07T11:18:20Z",
-            "accountId": "xxxxxxxxx",
-            "architecture": "x86_64",
-            "kernelId": None,
-            "ramdiskId": None,
-            "imageId": "ami-xxxxxxxxxx"
-        }
+    conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
+    conn.request("GET", "/latest/dynamic/instance-identity/document")
+    r1 = conn.getresponse()
+    return json.loads(r1.read().decode("utf-8"))
 
 def get_free_enis(ec2, internal_subnet):
     """
@@ -75,10 +57,10 @@ def get_free_enis(ec2, internal_subnet):
 
     return ec2.describe_network_interfaces(
         Filters=[
-            {
-                "Name": "tag:{}".format(ENI_TAG_KEY),
-                "Values": [ENI_TAG_VALUE]
-            },
+            # {
+            #     "Name": "tag:{}".format(ENI_TAG_KEY),
+            #     "Values": [ENI_TAG_VALUE]
+            # },
             {
                 "Name": "subnet-id",
                 "Values": [internal_subnet["SubnetId"]]
