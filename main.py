@@ -59,12 +59,12 @@ class NetworkConfiguration(object):
     @staticmethod
     def configure_new_iface(iface, expected_ip=None):
 
-        retval = subprocess.call(["dhclient", iface], stderr=subprocess.STDOUT)
-        if retval != 0:
-            # do not exit here, known bug, IP should be configured:
-            # http://unix.stackexchange.com/questions/155990/docker-bridges-dhcp#155995
-            logging.error("Configuring iface %s seemed to have failed", iface)
-            return False
+        # retval = subprocess.call(["dhclient", iface], stderr=subprocess.STDOUT)
+        # if retval != 0:
+        #     # do not exit here, known bug, IP should be configured:
+        #     # http://unix.stackexchange.com/questions/155990/docker-bridges-dhcp#155995
+        #     logging.error("Configuring iface %s seemed to have failed", iface)
+        #     return False
         if expected_ip is not None:
             iface_ip = NetworkConfiguration.get_ip_address(iface)
             if iface_ip != expected_ip:
@@ -331,7 +331,7 @@ def main():
         sys.exit(1)
 
     eni_ip = eni_to_configure.private_ip_address
-    logging.info("Eni_ip is: %s", eni_ip)
+    logging.info("ENI_IP is: %s", eni_ip)
     if not NetworkConfiguration.configure_new_iface("eth1", expected_ip=eni_ip):
         logging.error("Error configuring new ENI, exiting")
         sys.exit(1)
