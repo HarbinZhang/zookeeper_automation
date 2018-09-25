@@ -107,9 +107,9 @@ class NetworkConfiguration(object):
             rt_table_iface1 = iface1
             rt_table_iface2 = iface2
             rt_tables = """
-1   {}
-2   {}
-""".format(rt_table_iface1, rt_table_iface2)
+            1   {}
+            2   {}
+            """.format(rt_table_iface1, rt_table_iface2)
             ensure_written(rt_tables, "/etc/iproute2/rt_tables")
         except IOError as e:
             logging.exception("Error fixing same-net-routing for two interfaces")
@@ -135,6 +135,15 @@ class NetworkConfiguration(object):
                 return False
         return True
 
+
+def ensure_written(content, path_to_file):
+    """Ensure that the content is in the given `path_to_file`
+    (append if not)."""
+    with open(path_to_file, "r") as read_fd:
+        already_written = content in read_fd.read()
+    if not already_written:
+        with open(path_to_file, "a") as append_fd:
+            append_fd.write(content)
 
 
 def get_internal_subnets(ec2, current_az):
