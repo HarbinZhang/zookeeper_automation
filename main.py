@@ -332,9 +332,9 @@ def main():
 
     eni_ip = eni_to_configure.private_ip_address
     logging.info("ENI_IP is: %s", eni_ip)
-    if not NetworkConfiguration.configure_new_iface("eth1", expected_ip=eni_ip):
-        logging.error("Error configuring new ENI, exiting")
-        sys.exit(1)
+    # if not NetworkConfiguration.configure_new_iface("eth1", expected_ip=eni_ip):
+    #     logging.error("Error configuring new ENI, exiting")
+    #     sys.exit(1)
 
     if not NetworkConfiguration.fix_same_net_routing(
             "eth0", NetworkConfiguration.get_ip_address("eth0"),
