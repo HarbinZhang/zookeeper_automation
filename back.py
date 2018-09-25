@@ -34,12 +34,11 @@ def get_internal_subnets(ec2, current_az):
             {
                 "Name": "availability-zone",
                 "Values": [current_az]
+            },
+            {
+                "Name": "tag:Name",
+                "Values": ["internal-{}".format(current_az)]
             }
-            # ,
-            # {
-            #     "Name": "tag:Name",
-            #     "Values": ["internal-{}".format(current_az)]
-            # }
         ]
     )["Subnets"]
 
