@@ -61,7 +61,7 @@ def main():
     # release_eip(ec2, allocation_id)
     # metadata = get_metadata()
     metadata = ec2.describe_instances(InstanceIds=[instance_id])
-    print(metadata)
+    print(metadata['Reservations'][0]['Instances']['PublicIpAddress'])
 
 
 if __name__ == "__main__":
