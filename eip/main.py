@@ -122,6 +122,23 @@ def wait_for_attachment(ec2, eni_id, instance_id, attachment_id,
     return attachment
 
 
+def allocate_and_associate_eip(ec2, instance_id):
+    try:
+        allocation = ec2.allocate_address(Domain='vpc')
+        response = ec2.associate_address(AllocationId=allocation['AllocationId'],
+                                        InstanceId=instance_id)
+        print(response)
+        return allocation['AllocationId']
+    except ClientError as e:
+        print(e)    
+
+def release_eip(ec2, allocation_id):
+    try:
+        response = ec2.release_address(AllocationId=allocation_id)
+        print('Address released', allocation_id)
+    except ClientError as e:
+        print(e)    
+
 def main():
     print("hi")
     instance_id = get_metadata()["instanceId"]
@@ -131,16 +148,8 @@ def main():
 
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
-    internal_subnets = get_internal_subnets(ec2, current_az)
+    allocate_and_associate_eip(ec2, instance_id)
 
-    if not internal_subnets:
-        logging.error("No internal subnet found for availability zone %s",
-                      current_az)
-        sys.exit(1)
-
-    logging.info("Found internal subnets: %s", internal_subnets)
-    internal_subnet = internal_subnets[0]
-    logging.info("Using internal subnet: %s", internal_subnet)
 
 
 if __name__ == "__main__":
