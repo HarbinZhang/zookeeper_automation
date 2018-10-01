@@ -141,7 +141,6 @@ def release_eip(ec2, allocation_id):
         print(e)    
 
 def main():
-    print("hi")
     instance_id = get_metadata()["instanceId"]
     current_az = get_metadata()["availabilityZone"]
     logging.info("Current Instance ID %s", instance_id)
@@ -149,8 +148,10 @@ def main():
 
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
-    allocation_id = allocate_and_associate_eip(ec2, instance_id)
+    # allocation_id = allocate_and_associate_eip(ec2, instance_id)
     # release_eip(ec2, allocation_id)
+    metadata = get_metadata()
+    print(metadata)
 
 
 if __name__ == "__main__":
