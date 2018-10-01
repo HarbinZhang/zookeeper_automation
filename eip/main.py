@@ -125,6 +125,7 @@ def wait_for_attachment(ec2, eni_id, instance_id, attachment_id,
 def allocate_and_associate_eip(ec2, instance_id):
     try:
         allocation = ec2.allocate_address(Domain='vpc')
+        print(allocation)
         response = ec2.associate_address(AllocationId=allocation['AllocationId'],
                                         InstanceId=instance_id)
         print(response)
