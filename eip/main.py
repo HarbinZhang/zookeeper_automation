@@ -149,8 +149,8 @@ def main():
 
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
-    allocate_and_associate_eip(ec2, instance_id)
-
+    allocation_id = allocate_and_associate_eip(ec2, instance_id)
+    release_eip(ec2, allocation_id)
 
 
 if __name__ == "__main__":
