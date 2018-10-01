@@ -21,7 +21,7 @@ APP_SPEC = os.environ.get("APP_SPEC", "")
 BOTO_REGION = os.environ.get("BOTO_REGION", "")
 
 if BOTO_REGION == "":
-    BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
+    BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2") # Need to change
 
 @functools.lru_cache(1)
 def get_metadata():
@@ -36,7 +36,8 @@ def get_public_ipv4():
     conn.request("GET", "/latest/meta-data/public-ipv4")
     r1 = conn.getresponse()
     return r1.read().decode("utf-8")
-
+    # public_ipv4 = ec2.describe_instances(InstanceIds=[instance_id])
+    # print(public_ipv4['Reservations'][0]['Instances'][0]['PublicIpAddress'])
 
 def allocate_and_associate_eip(ec2, instance_id):
     try:
@@ -59,19 +60,21 @@ def release_eip(ec2, allocation_id):
 
 def main():
     instance_id = get_metadata()["instanceId"]
-    current_az = get_metadata()["availabilityZone"]
+    # current_az = get_metadata()["availabilityZone"]
     # logging.info("Current Instance ID %s", instance_id)
     # logging.info("Current AZ %s", current_az)
 
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
     ec2_res = boto3.resource('ec2', region_name=BOTO_REGION)
+
     # allocation_id = allocate_and_associate_eip(ec2, instance_id)
     # release_eip(ec2, allocation_id)
-    # metadata = get_metadata()
-    # metadata = ec2.describe_instances(InstanceIds=[instance_id])
-    # print(metadata['Reservations'][0]['Instances'][0]['PublicIpAddress'])
-    ipv4 = get_public_ipv4()
-    print(ipv4)
+    # ipv4 = get_public_ipv4()
+    # print(ipv4)
+    
+    client = boto3.client('ecs', region_name=BOTO_REGION)
+    response = client.list_container_instances()
+    print(response)
 
 
 if __name__ == "__main__":
