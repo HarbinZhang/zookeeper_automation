@@ -1,5 +1,7 @@
 import boto3
 import os
+from botocore.exceptions import ClientError
+
 
 BOTO_REGION = os.environ.get("BOTO_REGION", "")
 
@@ -13,3 +15,12 @@ filters = [
 ]
 response = ec2.describe_addresses(Filters=filters)
 print(response)
+
+try:
+    allocation = ec2.allocate_address(Domain='vpc')
+    print(allocation)
+    # response = ec2.associate_address(AllocationId=allocation['AllocationId'],
+                                     InstanceId='INSTANCE_ID')
+    # print(response)
+except ClientError as e:
+    print(e)
