@@ -20,7 +20,7 @@ try:
     allocation = ec2.allocate_address(Domain='vpc')
     print(allocation)
     # response = ec2.associate_address(AllocationId=allocation['AllocationId'],
-                                     InstanceId='INSTANCE_ID')
+                                    #  InstanceId='INSTANCE_ID')
     # print(response)
 except ClientError as e:
     print(e)
