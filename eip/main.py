@@ -73,7 +73,8 @@ def main():
     # print(ipv4)
     
     client = boto3.client('ecs', region_name=BOTO_REGION)
-    response = client.list_container_instances()
+    response = client.list_clusters()
+    # response = client.list_container_instances()
     print(response)
 
 
