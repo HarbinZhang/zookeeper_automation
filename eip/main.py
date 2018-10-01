@@ -30,6 +30,14 @@ def get_metadata():
     r1 = conn.getresponse()
     return json.loads(r1.read().decode("utf-8"))
 
+@functools.lru_cache(1)
+def get_public_ipv4():
+    conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
+    conn.request("GET", "/latest/meta-data/public-ipv4")
+    r1 = conn.getresponse()
+    return json.loads(r1.read().decode("utf-8"))    
+
+
 def allocate_and_associate_eip(ec2, instance_id):
     try:
         allocation = ec2.allocate_address(Domain='vpc')
@@ -60,8 +68,10 @@ def main():
     # allocation_id = allocate_and_associate_eip(ec2, instance_id)
     # release_eip(ec2, allocation_id)
     # metadata = get_metadata()
-    metadata = ec2.describe_instances(InstanceIds=[instance_id])
-    print(metadata['Reservations'][0]['Instances']['PublicIpAddress'])
+    # metadata = ec2.describe_instances(InstanceIds=[instance_id])
+    # print(metadata['Reservations'][0]['Instances'][0]['PublicIpAddress'])
+    ipv4 = get_public_ipv4()
+    print(ipv4)
 
 
 if __name__ == "__main__":
