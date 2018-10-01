@@ -35,7 +35,7 @@ def get_public_ipv4():
     conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
     conn.request("GET", "/latest/meta-data/public-ipv4")
     r1 = conn.getresponse()
-    return json.loads(r1.read().decode("utf-8"))    
+    return r1.read().decode("utf-8")
 
 
 def allocate_and_associate_eip(ec2, instance_id):
