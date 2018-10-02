@@ -61,10 +61,6 @@ def release_eip(ec2, allocation_id):
         print(e)    
 
 def main():
-    # TODO: retry
-    # TODO: prepare config file
-    # TODO: tempory connection to determine new cluster or not
-    
     instance_id = get_metadata()["instanceId"]
     # logging.info("Current Instance ID %s", instance_id)
     # logging.info("Current AZ %s", current_az)
@@ -87,7 +83,6 @@ def main():
         containerInstances=list_response['containerInstanceArns']
     )
 
-    # get Instance Ids
     instance_ids = []
     for it in descriptions_response['containerInstances']:
         # Deduplicate: set 0.0.0.0 for self
@@ -100,10 +95,11 @@ def main():
     public_ips = []
     for reservation in instances['Reservations']:
         for instance in reservation['Instances']:
+            # Deduplicate: set 0.0.0.0 for self
+            # if instance['PublicIpAddress'] == ipv4:
+            #     continue
             public_ips.append(instance['PublicIpAddress'])
-    # print(public_ips)
-
-
+    print(public_ips)
 
 
 if __name__ == "__main__":
