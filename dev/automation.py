@@ -63,19 +63,43 @@ def main():
     sorted_ips = sorted(private_ips, key=lambda item: socket.inet_aton(item[0]))
     assert len(sorted_ips) == CLUSTER_SIZE
 
-    # produce myid based on sorted private ips
     local_ip = get_private_ipv4()
-    myid = sorted_ips.index(local_ip) + 1
-    print (myid, local_ip)
-    prepare_myid(myid)
-    
 
-    # TODO: get public IP Address
-    # TODO: add sync() here
+    is_new_cluster = True
+    for ip in sorted_ips:
+        if(local_ip == ip):
+            continue
+        if testZookeeper(ip):
+            is_new_cluster = False
+            break
 
-    # get current public IP, or allocate a new elastic IP
-    public_ip = get_public_ipv4(ec2, instance_id)
-    print(public_ip)
+    if not is_new_cluster:
+        # produce myid based on sorted private ips
+        logging.info("This is a new cluster")
+        myid = sorted_ips.index(local_ip) + 1
+        print (myid, local_ip)
+        # prepare_myid(myid)
+
+        # get current public IP, or allocate a new elastic IP
+        public_ip = get_public_ipv4(ec2, instance_id)
+        print(public_ip)
+    else:
+        logging.info("This is an existing cluster")
+        new_private_ips = []    # new deployed instances waiting public IP
+        valid_public_ips = []   # existing instances' public IP
+        for reservation in instances['Reservations']:
+            for instance in reservation['Instances']:        
+                if 'PublicIpAddress' not in instance:
+                    new_private_ips.append(instance['PrivateIpAddress'])
+                else:
+                    valid_public_ips.append(instance['PublicIpAddress'])
+        print(new_private_ips)
+        print(valid_public_ips)
+
+
+        return
+
+
 
     # sync() retry wait until all instances have public IP
     for i in range(RETRY_TIMES):
@@ -91,8 +115,32 @@ def main():
         return            
     print(public_ips_dict)
 
-    prepare_zoocfg(myid, public_ips_dict)
+    # prepare_zoocfg(myid, public_ips_dict)
 
+
+def testZookeeper(hostname):
+    data = netcat(hostname, 2181, "ruok")
+    if data is None:
+        return False
+    elif data == "imok":
+        return True
+    logging.warn("Zookeeper return status wrong %s", data)
+    return False
+
+
+def netcat(hostname, port, content):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((hostname, port))
+        s.settimeout(1)
+        s.sendall(content)
+        s.shutdown(socket.SHUT_WR)
+        data = s.recv(1024)
+        s.close()
+        return data
+    except:
+        s.close()
+        return None
 
 
 
