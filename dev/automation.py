@@ -33,7 +33,6 @@ if BOTO_REGION == "":
 
 
 def main():
-
     instance_id = get_metadata()["instanceId"]
     logging.info("Current Instance ID %s", instance_id)
 
@@ -80,7 +79,7 @@ def main():
         # prepare_myid(myid)
 
         # get current public IP, or allocate a new elastic IP
-        public_ip = get_public_ipv4(ec2, instance_id)
+        public_ip = get_public_ipv4(ec2, instance_id, myid)
         print(public_ip)
     else:
         logging.info("This is an existing cluster")
@@ -175,7 +174,7 @@ def allocate_and_associate_eip(ec2, instance_id):
                                         InstanceId=instance_id)
         print(response)
         # logging.info(response)
-        return allocation['PublicIp']
+        return allocation
     except ClientError as e:
         print(e)    
         return None
@@ -218,7 +217,7 @@ def get_metadata():
 
 
 # @functools.lru_cache(1)
-def get_public_ipv4(ec2, instance_id):
+def get_public_ipv4(ec2, instance_id, myid):
     conn = httplib.HTTPConnection("169.254.169.254", timeout=10)
     conn.request("GET", "/latest/meta-data/public-ipv4")
     r1 = conn.getresponse()
@@ -227,8 +226,23 @@ def get_public_ipv4(ec2, instance_id):
     if len(res) < 20:
         logging.info("Already has a public IP: %s", res)
     else:
-        res = allocate_and_associate_eip(ec2, instance_id)
-        logging.info("Allocate a new elastic IP: %s", res)
+        allocation = allocate_and_associate_eip(ec2, instance_id)
+        logging.info("Allocate a new elastic IP: %s", allocation["PublicIp"])
+        response = ec2.create_tags(
+            Resources=[
+                id,
+            ],
+            Tags=[
+                {
+                    'Key': 'myid',
+                    'Value': myid ,
+                },
+                {
+                    'Key': 'usage',
+                    'Value': fjord,
+                },
+            ],    
+        )        
     return res
     # public_ipv4 = ec2.describe_instances(InstanceIds=[instance_id])
     # print(public_ipv4['Reservations'][0]['Instances'][0]['PublicIpAddress'])

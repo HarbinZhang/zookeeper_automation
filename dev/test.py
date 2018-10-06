@@ -9,16 +9,17 @@ filters = [
 response = ec2.describe_addresses(Filters=filters)
 id = response['Addresses'][0]['AllocationId']
 print (id)
+print response
 
-res = ec2.create_tags(
-    Resources=[
-        id,
-    ],
-    Tags=[
-        {
-            'Key': 'Stack',
-            'Value': 'production',
-        },
-    ],    
-)
-print(res)
+# res = ec2.create_tags(
+#     Resources=[
+#         id,
+#     ],
+#     Tags=[
+#         {
+#             'Key': 'Stack',
+#             'Value': 'production',
+#         },
+#     ],    
+# )
+# print(res)
