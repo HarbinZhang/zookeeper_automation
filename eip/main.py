@@ -2,7 +2,8 @@ import os
 import sys
 import time
 import functools
-import http.client
+# import http.client
+import httplib
 import json
 import random
 import subprocess
@@ -21,20 +22,21 @@ APP_SPEC = os.environ.get("APP_SPEC", "")
 BOTO_REGION = os.environ.get("BOTO_REGION", "")
 
 CLUSTER = 'automation'
+CLUSTER_SIZE = 3
 
 if BOTO_REGION == "":
     BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2") # Need to change
 
-@functools.lru_cache(1)
+# @functools.lru_cache(1)
 def get_metadata():
-    conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
+    conn = httplib.HTTPConnection("169.254.169.254", timeout=10)
     conn.request("GET", "/latest/dynamic/instance-identity/document")
     r1 = conn.getresponse()
     return json.loads(r1.read().decode("utf-8"))
 
-@functools.lru_cache(1)
+# @functools.lru_cache(1)
 def get_public_ipv4():
-    conn = http.client.HTTPConnection("169.254.169.254", 80, timeout=10)
+    conn = httplib.HTTPConnection("169.254.169.254", timeout=10)
     conn.request("GET", "/latest/meta-data/public-ipv4")
     r1 = conn.getresponse()
     return r1.read().decode("utf-8")
@@ -66,7 +68,7 @@ def main():
     # TODO: tempory connection to determine new cluster or not
     
     instance_id = get_metadata()["instanceId"]
-    # logging.info("Current Instance ID %s", instance_id)
+    logging.info("Current Instance ID %s", instance_id)
     # logging.info("Current AZ %s", current_az)
 
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
@@ -74,8 +76,8 @@ def main():
 
     # allocation_id = allocate_and_associate_eip(ec2, instance_id)
     # release_eip(ec2, allocation_id)
-    # ipv4 = get_public_ipv4()
-    # print(ipv4)
+    ipv4 = get_public_ipv4()
+    print(ipv4)
     
     ecs = boto3.client('ecs', region_name=BOTO_REGION)
     list_response = ecs.list_container_instances(
@@ -101,7 +103,7 @@ def main():
     for reservation in instances['Reservations']:
         for instance in reservation['Instances']:
             public_ips.append(instance['PublicIpAddress'])
-    # print(public_ips)
+    print(public_ips)
 
 
 
