@@ -7,4 +7,4 @@ filters = [
     {'Name': 'public-ip', 'Values': ['52.15.164.175']}
 ]
 response = ec2.describe_addresses(Filters=filters)
-print(response)
+print(response['Address']['AllocationId'])
