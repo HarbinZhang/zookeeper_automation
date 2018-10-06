@@ -39,7 +39,6 @@ def main():
 
     # get all private IPs
     ec2 = boto3.client('ec2', region_name=BOTO_REGION)
-
     ecs = boto3.client('ecs', region_name=BOTO_REGION)
     list_response = ecs.list_container_instances(
         cluster=CLUSTER
