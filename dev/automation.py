@@ -12,6 +12,7 @@ import socket
 import fcntl
 import logging
 import errno
+import collections
 
 import boto3
 from botocore.exceptions import ClientError
@@ -27,6 +28,9 @@ CLUSTER = 'automation'
 CLUSTER_SIZE = 3
 RETRY_TIMES = 5
 RETRY_INTERVAL = 20
+
+ENV_TAG_KEY = "env"
+ENV_TAG_VALUE = "fjord"
 
 if BOTO_REGION == "":
     BOTO_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2") # Need to change
@@ -71,12 +75,12 @@ def main():
             is_new_cluster = False
             break
 
-    if not is_new_cluster:
+    if is_new_cluster:
         # produce myid based on sorted private ips
         logging.info("This is a new cluster")
         myid = sorted_ips.index(local_ip) + 1
         print (myid, local_ip)
-        # prepare_myid(myid)
+        prepare_myid(myid)
 
         # get current public IP, or allocate a new elastic IP
         public_ip = get_public_ipv4(ec2, instance_id, myid)
@@ -91,9 +95,47 @@ def main():
                     new_private_ips.append(instance['PrivateIpAddress'])
                 else:
                     valid_public_ips.append(instance['PublicIpAddress'])
-        print(new_private_ips)
-        print(valid_public_ips)
+        print("new_priate_ips: ", new_private_ips)
+        print("valid_public_ips: ", valid_public_ips)
 
+        response = ec2.describe_addresses(
+            Filters = [
+                {
+                    'Name':'tag:{}'.format(ENV_TAG_KEY),
+                    'Values':[ENV_TAG_VALUE],
+                },
+            ]
+        )
+        
+        # new_private_ips = ['172.31.3.213', '172.31.1.150']
+        # valid_public_ips = ['18.223.233.152']
+
+        new_myids_to_public_ips = {}
+        new_myids = []
+        for address in response['Addresses']:
+            if address['PublicIp'] in valid_public_ips:
+                continue
+            else:
+                for tag in address['Tags']:
+                    if tag['Key'] == 'myid':
+                        new_myids_to_public_ips[tag['Value']] = address['PublicIp']
+                        new_myids.append(tag['Value'])
+
+
+        new_myids.sort(key=lambda item:item[0])
+        new_private_ips.sort(key=lambda item: socket.inet_aton(item[0]))
+        print(new_myids_to_public_ips)
+        print(new_myids)
+        print(local_ip)
+
+        myid = new_myids[new_private_ips.index(local_ip)]
+        my_public_ip = new_myids_to_public_ips[myid]
+        print(myid)
+        print(my_public_ip)
+
+        response = ec2.associate_address(PublicIp=my_public_ip,
+                                        InstanceId=instance_id)
+        print("associate response: ",response)
 
         return
 
@@ -113,14 +155,18 @@ def main():
         return            
     print(public_ips_dict)
 
-    # prepare_zoocfg(myid, public_ips_dict)
+    prepare_zoocfg(myid, public_ips_dict)
+
+    logging.info("zookeeper automation finished")
 
 
 def testZookeeper(hostname):
     data = netcat(hostname, 2181, "ruok")
     if data is None:
+        logging.info("zookeeper: %s is NOT working", hostname)
         return False
     elif data == "imok":
+        logging.info("zookeeper: %s is working", hostname)
         return True
     logging.warn("Zookeeper return status wrong %s", data)
     return False
@@ -238,8 +284,8 @@ def get_public_ipv4(ec2, instance_id, myid):
                     'Value': myid ,
                 },
                 {
-                    'Key': 'usage',
-                    'Value': fjord,
+                    'Key': ENV_TAG_KEY,
+                    'Value': ENV_TAG_VALUE,
                 },
             ],    
         )        
