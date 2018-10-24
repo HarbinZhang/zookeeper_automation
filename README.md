@@ -2,8 +2,8 @@
 
 ## Requirements
 Zookeeper automation includes two parts:    deployment + maintenance.
-1. maintenance: when one or more zookeepers down, we can start new zookeepers, let them join the cluster without restart other normal zookeepers. We want to use "static-like" IP to achieve this goal.
-2. deployment: zookeepers will get their "static" IP, associate it, get all other zookeepers "static" IPs. Write them into zoo.cfg. Then start zookeeper server.
+1. maintenance: When one or more zookeepers down, we can start new zookeepers automatically, and let them join the cluster without restarting other alive zookeepers. We want to use "static-like" IP to achieve this goal.
+2. deployment: Zookeepers would get their "static" IP, associate it and get all other zookeepers "static" IPs. It also would prepare itself myid, get all others id and write their ids, IPs into zoo.cfg. Then start zookeeper server.  
 
 ## Basic Idea
 ![Alt text](images/basicIdea.png?raw=true "basicIdea")
