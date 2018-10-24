@@ -77,67 +77,15 @@ def main():
     if is_new_cluster:
         # produce myid based on sorted private ips
         logging.info("This is a new cluster")
-        myid = sorted_ips.index(local_ip) + 1
-        prepare_myid(myid)
-
     else:
         logging.info("This is an existing cluster")
-        new_private_ips = []    # new deployed instances waiting public IP
-        valid_public_ips = []   # existing instances' public IP
-        for reservation in instances['Reservations']:
-            for instance in reservation['Instances']:        
-                if 'PublicIpAddress' not in instance:
-                    new_private_ips.append(instance['PrivateIpAddress'])
-                else:
-                    valid_public_ips.append(instance['PublicIpAddress'])
-        print("new_priate_ips: ", new_private_ips)
-        print("valid_public_ips: ", valid_public_ips)
 
-        response = ec2.describe_addresses(
-            Filters = [
-                {
-                    'Name':'tag:{}'.format(ENV_TAG_KEY),
-                    'Values':[ENV_TAG_VALUE],
-                },
-            ]
-        )
-        
-        # new_private_ips = ['172.31.3.213', '172.31.1.150']
-        # valid_public_ips = ['18.223.233.152']
-
-        new_myids_to_public_ips = {}
-        new_myids = []
-        for address in response['Addresses']:
-            if address['PublicIp'] in valid_public_ips:
-                continue
-            else:
-                for tag in address['Tags']:
-                    if tag['Key'] == 'myid':
-                        new_myids_to_public_ips[tag['Value']] = address['PublicIp']
-                        new_myids.append(tag['Value'])
-
-
-        new_myids.sort(key=lambda item:item[0])
-        new_private_ips.sort(key=lambda item: socket.inet_aton(item[0]))
-        print(new_myids_to_public_ips)
-        print(new_myids)
-        print(local_ip)
-
-        myid = new_myids[new_private_ips.index(local_ip)]
-        my_public_ip = new_myids_to_public_ips[myid]
-        print(myid)
-        print(my_public_ip)
-
-        response = ec2.associate_address(PublicIp=my_public_ip,
-                                        InstanceId=instance_id)
-        print("associate response: ",response)
-
-        return
-
-
+    myid = sorted_ips.index(local_ip) + 1
+    prepare_myid(myid)
+    
     private_ips_dict = {}
     for index, ip in enumerate(sorted_ips):
-        private_ips[index+1] = ip
+        private_ips_dict[index+1] = ip
 
 
     print(private_ips_dict)
