@@ -10,7 +10,7 @@ https://forums.aws.amazon.com/thread.jspa?threadID=84340
 FYI
 >"Launching an EC2 instance with multiple network interfaces will automatically configure interfaces, private IP addresses and route tables on the operating system of the instance. Warm or hot attaching an additional network interface (when the instance is stopped or running) may require you to manually bring up the second interface, configure the private IP address, and modify the route table accordingly. Microsoft Windows Server 2003 and 2008 instances will automatically recognize the warm or hot attach and will automatically configure themselves. Instances that are not running a Microsoft Windows Server operating system might require the manual interaction to configure the interface on the operating system.)"
 
-### Update
+### Update - 2018.10
 With the latest Amazon Linux(2018.03), The secondary network interface can work without restarting the instance. 
 
 I have tested with 
@@ -25,7 +25,18 @@ But in zookeeper cluster, They cannot build connection with each other with thei
 ```
 Cannot open channel to 1 at election address /172.31.27.***:3888 java.net.SocketTimeoutException: connect timed out
 ```  
+```
+// route: we can see the last two lines having the same Destination and Genmask with different Interface.
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         ip-172-31-16-1. 0.0.0.0         UG    0      0        0 eth0
+default         ip-172-31-16-1. 0.0.0.0         UG    10001  0        0 eth1
+instance-data.u *               255.255.255.255 UH    0      0        0 eth0
+172.17.0.0      *               255.255.0.0     U     0      0        0 docker0
+172.31.16.0     *               255.255.240.0   U     0      0        0 eth0
+172.31.16.0     *               255.255.240.0   U     0      0        0 eth1
+```
 I think it's because the ec2 instance would choose either eth0 or eth1 to send request randomly. So Creating a proper route table can solve this problem.  
+
 https://serverfault.com/questions/336021/two-network-interfaces-and-two-ip-addresses-on-the-same-subnet-in-linux
   
 But multiple network interfaces on the same subnet is still not recommended. 
