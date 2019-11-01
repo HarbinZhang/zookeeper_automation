@@ -14,7 +14,8 @@ Then we can prepare appropriate config files.
 
 ## Solutions
 There are several ways(we tried) to achieve these requirements:
-Basically, I choose their IP as the common key, and their ID can be determined by their IP order in the sorted IPs.
+Basically, I choose their IP as the common key, and their ID can be determined by their IP order in the sorted IPs.  
+
 Zookeepers get their "static" IP, associate it and get all other zookeepers "static" IPs. All zookeepers sort their "static" IP and get the same ordered list. Then each zookeeper can generate their unique myid based on their IP order in the sorted list.
 ### eip(Elastic IP)
 ![Alt text](images/eip.png?raw=true "eip")
