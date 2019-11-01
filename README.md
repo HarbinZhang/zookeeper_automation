@@ -11,9 +11,7 @@ Zookeeper automation includes two parts:    deployment + maintenance.
 ![Alt text](images/basicIdea.png?raw=true "basicIdea")
 The basic idea is when a new zookeeper deployed to a cluster, we need to figure out: whether the cluster is a new cluster or not.
 Then we can prepare appropriate config files. 
-Zookeeper automation includes two parts:    deployment + maintenance.
-1. deployment: Zookeepers get their "static" IP, associate it and get all other zookeepers "static" IPs. It also prepare itself myid, get all others id and write their ids, IPs into zoo.cfg. Then start zookeeper server. 
-2. maintenance: When one or more zookeepers down, we can start new zookeepers automatically, and let them join the cluster without restarting other alive zookeepers. We want to use "static-like" IP to achieve this goal.
+
 ## Solutions
 There are several ways(we tried) to achieve these requirements:
 Basically, I choose their IP as the common key, and their ID can be determined by their IP order in the sorted IPs.
